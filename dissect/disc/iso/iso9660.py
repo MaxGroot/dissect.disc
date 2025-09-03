@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import BinaryIO, Iterator
-
-from dissect.util.stream import RangeStream
+from typing import TYPE_CHECKING, BinaryIO
 
 from dissect.disc.base import DiscBase, DiscBaseEntry, DiscFormat
 from dissect.disc.exceptions import FileNotFoundError, NotAFileError
 from dissect.disc.iso.c_iso_9660 import c_iso
+from dissect.util.stream import RangeStream
 
 log = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class ISO9660Disc(DiscBase):
@@ -55,8 +57,7 @@ class ISO9660Disc(DiscBase):
         # Remove trailing slash and left-pad with leading slash
         if not path.startswith("/"):
             path = "/" + path
-        if path.endswith("/"):
-            path = path[:-1]
+        path = path.removesuffix("/")
 
         if not use_path_table:
             return self.root_record.get(path)
@@ -113,14 +114,14 @@ class ISO9660Disc(DiscBase):
         if self._path_table is not None:
             return self._path_table
 
-        self._path_table = dict()
+        self._path_table = {}
 
         self.fh.seek(self.primary_volume.type_l_path_table * self.logical_block_size)
         path_table_bytes = self.fh.read(self.primary_volume.path_table_size)
 
         offset = 0
         index = 1
-        entries: dict[int, str] = dict()
+        entries: dict[int, str] = {}
 
         while offset < self.primary_volume.path_table_size:
             entry = c_iso.iso_path_table_entry(path_table_bytes[offset:])

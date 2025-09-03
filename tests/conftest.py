@@ -1,15 +1,15 @@
 import gzip
-import os
-from typing import Iterator
+from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
 
-def absolute_path(filename) -> str:
-    return os.path.join(os.path.dirname(__file__), filename)
+def absolute_path(filename: str) -> str:
+    return Path(__file__).parent.resolve() / filename
 
 
-def gzip_file(filename) -> Iterator[gzip.GzipFile]:
+def gzip_file(filename: str) -> Iterator[gzip.GzipFile]:
     with gzip.GzipFile(absolute_path(filename), "rb") as fh:
         yield fh
 
@@ -17,14 +17,14 @@ def gzip_file(filename) -> Iterator[gzip.GzipFile]:
 @pytest.fixture
 def udf_only_iso() -> Iterator[gzip.GzipFile]:
     # Made using https://askubuntu.com/questions/1152527/creating-a-pure-udf-iso
-    yield from gzip_file("data/udf.iso.gz")
+    yield from gzip_file("_data/udf.iso.gz")
 
 
 @pytest.fixture
 def rockridge_joliet_iso() -> Iterator[gzip.GzipFile]:
-    yield from gzip_file("data/rockridge_joliet.iso.gz")
+    yield from gzip_file("_data/rockridge_joliet.iso.gz")
 
 
 @pytest.fixture
 def hybrid_iso() -> Iterator[gzip.GzipFile]:
-    yield from gzip_file("data/hybrid.iso.gz")
+    yield from gzip_file("_data/hybrid.iso.gz")

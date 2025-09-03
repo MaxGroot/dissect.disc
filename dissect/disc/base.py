@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
 from enum import Enum
-from typing import Any, BinaryIO, Iterator
+from typing import TYPE_CHECKING, Any, BinaryIO
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from datetime import datetime
 
 from dissect.disc.exceptions import (
     FileNotFoundError,
@@ -25,16 +28,16 @@ class DiscBase:
     @property
     def name(self) -> str:
         """Return the name of this disc."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def get(self, path: str) -> DiscBaseEntry:
         """Get a DiscBaseEntry from an absolute path."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class DiscBaseEntry:
     def __init__(self, fs: DiscBase, entry: Any, parent: DiscBaseEntry | None = None):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def get(self, path: str) -> DiscBaseEntry:
         """Get a DiscBaseEntry relative to this one."""
@@ -61,7 +64,7 @@ class DiscBaseEntry:
 
     def iterdir(self) -> Iterator[DiscBaseEntry]:
         """Iterate over the contents of this directory."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def listdir(self) -> dict[str, DiscBaseEntry]:
         """Return a dictionary of DirectoryRecords by name."""
@@ -69,7 +72,7 @@ class DiscBaseEntry:
 
     def open(self) -> BinaryIO:
         """Open the file for reading."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def is_symlink(self) -> bool:
         """Return True if this entry is a symlink."""
@@ -78,21 +81,21 @@ class DiscBaseEntry:
     @property
     def atime(self) -> datetime:
         """Return the access time."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def mtime(self) -> datetime:
         """Return the modification time."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def ctime(self) -> datetime:
         """Return the creation time."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def readlink(self) -> str:
         """Return the target of the symlink."""
-        raise NotASymlinkError()
+        raise NotASymlinkError
 
     @property
     def mode(self) -> int:
@@ -122,4 +125,4 @@ class DiscBaseEntry:
     @property
     def size(self) -> int:
         """File size"""
-        raise NotImplementedError()
+        raise NotImplementedError

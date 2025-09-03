@@ -129,6 +129,6 @@ struct iso_path_table_entry {
     uint16_t    parent_dir_no;
     char        name[directory_id_len];
 }
-"""  # noqa: E501
+"""
 
 c_iso = cstruct().load(iso_def)

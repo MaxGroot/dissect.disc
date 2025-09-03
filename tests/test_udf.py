@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import BinaryIO
 
 from dissect.disc.disc import DISC, DiscFormat, log
+
 from tests.test_iso import genisoimage_joliet_filename
 
 log.setLevel(logging.DEBUG)

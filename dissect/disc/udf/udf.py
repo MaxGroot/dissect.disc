@@ -4,9 +4,7 @@ import logging
 import stat
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from typing import BinaryIO, Iterator
-
-from dissect.util.stream import MappingStream, RangeStream
+from typing import TYPE_CHECKING, BinaryIO
 
 from dissect.disc.base import DiscBase, DiscBaseEntry
 from dissect.disc.exceptions import (
@@ -16,7 +14,11 @@ from dissect.disc.exceptions import (
     NotUDFError,
 )
 from dissect.disc.udf.c_udf import c_udf
+from dissect.util.stream import MappingStream, RangeStream
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from typing import NoReturn
 log = logging.getLogger(__name__)
 
 SECTOR_SIZES = [
@@ -56,15 +58,15 @@ class UDFDisc(DiscBase):
         - Virtual Partition
 
         For all of these, any ISOs containing such features would be greatly appreciated for testing.
-    """  # noqa: E501
+    """
 
     def __init__(self, fh: BinaryIO, sector_size: int):
         self.fh = fh
         self.sector_size = sector_size
 
         self.logical_volume_descriptor = None
-        self._physical_partition_map: dict[int, c_udf.udf_partition_descriptor] = dict()
-        self.partition_map: dict[int, UDFPartition] = dict()
+        self._physical_partition_map: dict[int, c_udf.udf_partition_descriptor] = {}
+        self.partition_map: dict[int, UDFPartition] = {}
 
         self._load_volume_descriptors()
         self._parse_partition_map()
@@ -272,7 +274,7 @@ class UDFEntry(DiscBaseEntry):
 
             yield self.disc._file_entry_from_icb(descriptor.icb, path, identifier)
 
-    def open(self, open_as_directory=False) -> BinaryIO:
+    def open(self, open_as_directory: bool = False) -> BinaryIO:
         if self.is_dir and not open_as_directory:
             raise NotAFileError
 
@@ -383,12 +385,14 @@ class UDFEntry(DiscBaseEntry):
         # Currently we haven't come across ISOs with streams, so we warn if these values are not the same, indicating
         # streams are in fact available.
 
-        if isinstance(self.entry, c_udf.udf_extended_file_entry):
-            if self.entry.object_size != self.entry.information_length:
-                if not self.disc.warned_named_streams:
-                    log.critical("This UDF disc contains named streams, which are not yet supported")
-                    self.disc.warned_named_streams = True
-                return self.entry.object_size
+        if (
+            isinstance(self.entry, c_udf.udf_extended_file_entry)
+            and self.entry.object_size != self.entry.information_length
+        ):
+            if not self.disc.warned_named_streams:
+                log.critical("This UDF disc contains named streams, which are not yet supported")
+                self.disc.warned_named_streams = True
+            return self.entry.object_size
 
         return self.entry.information_length
 
@@ -423,7 +427,7 @@ class UDFSparablePartition(UDFPartition):
         super().__init__(fs, physical_partition_descriptor)
 
         self.packet_length = sparable_partition_map.packet_length
-        self.remappings: dict[int, int] = dict()
+        self.remappings: dict[int, int] = {}
 
         sparing_tables = BytesIO(sparable_partition_map.sparing_tables)
         for i in range(sparable_partition_map.number_of_sparing_tables):
@@ -437,7 +441,7 @@ class UDFSparablePartition(UDFPartition):
                 self.remappings[mapping.original_location] = mapping.mapped_location
 
     def open_extent(self, logical_block_num: int, length: int) -> RangeStream:
-        if logical_block_num in self.remappings.keys() or logical_block_num in self.remappings.values():
+        if logical_block_num in self.remappings or logical_block_num in self.remappings.values():
             logical_block_num = self.remappings[logical_block_num]
             raise NotImplementedError("Sparable Partition not yet tested: remapped position requested")
         return super().open_extent(logical_block_num, length)
@@ -455,7 +459,7 @@ class UDFVirtualPartition(UDFPartition):
     ) -> None:
         super().__init__(fs, physical_partition_descriptor)
 
-    def open_extent(self, logical_block_num: int, length: int):
+    def open_extent(self, logical_block_num: int, length: int) -> NoReturn:
         raise NotImplementedError("Virtual Partition not yet supported")
 
 
@@ -467,7 +471,7 @@ class UDFMetadataPartition(UDFPartition):
     def __init__(self, fs: UDFDisc, physical_partition_descriptor: c_udf.udf_partition_descriptor) -> None:
         super().__init__(fs, physical_partition_descriptor)
 
-    def open_extent(self, logical_block_num: int, length: int):
+    def open_extent(self, logical_block_num: int, length: int) -> NoReturn:
         raise NotImplementedError("Metadata Partition not yet supported")
 
 
@@ -475,7 +479,7 @@ def osta_compression_to_encoding(compression: int) -> str:
     """Determine the encoding of a string based on the OSTA compression algorithm byte."""
     if compression == 8:
         return "utf-8"
-    elif compression == 16:
+    if compression == 16:
         return "utf-16-be"
     raise ValueError(f"Unknown compression algorithm {compression}")
 

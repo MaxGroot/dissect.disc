@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from datetime import datetime
 from io import BytesIO
-from typing import BinaryIO, Iterator
-
-from dissect.util.stream import RangeStream
+from typing import TYPE_CHECKING, BinaryIO
 
 from dissect.disc.exceptions import NotASymlinkError, NotRockridgeError
 from dissect.disc.iso.c_iso_9660 import c_iso
@@ -23,6 +20,11 @@ from dissect.disc.iso.iso9660 import (
     ISO9660Disc,
     parse_iso9660_timestamp,
 )
+from dissect.util.stream import RangeStream
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -63,7 +65,7 @@ class RockRidgeDirectoryRecord(ISO9660DirectoryRecord):
         self._posix_entry: str | bool | None = None
 
         self._timestamps_initialized = False
-        self.timestamps: dict[RockRidgeTimestampType, datetime] = dict()
+        self.timestamps: dict[RockRidgeTimestampType, datetime] = {}
 
         self._set_name()
 
@@ -175,7 +177,7 @@ class RockRidgeDirectoryRecord(ISO9660DirectoryRecord):
         # When we start iterating through timestamp values, we have to know for each timestamp with which 'flag' it is
         # associated. To match the timestamp index to the right flag, we have to know where the 'gaps' (disabled flags)
         # are.
-        gaps = dict()
+        gaps = {}
         gap_size = 0
         timestamp_index = 0
         for flag in timestamp_flags:
@@ -366,12 +368,10 @@ def load_rockridge(fh: BinaryIO, base_disc: ISO9660Disc) -> RockridgeDisc:
         identifier = extensions_reference_entry.identifier
         if identifier in ROCKRIDGE_MAGICS:
             return RockridgeDisc(fh, base_disc.primary_volume, "utf-8")
-        else:
-            log.error(
-                "Encountered SUSP-compliant disc but could not detect Rockridge from extensions identifier '%s'",
-                identifier,
-            )
-            raise NotRockridgeError
-    else:
-        log.error("Encountered SUSP-compliant disc but could not detect Rockridge.")
+        log.error(
+            "Encountered SUSP-compliant disc but could not detect Rockridge from extensions identifier '%s'",
+            identifier,
+        )
         raise NotRockridgeError
+    log.error("Encountered SUSP-compliant disc but could not detect Rockridge.")
+    raise NotRockridgeError

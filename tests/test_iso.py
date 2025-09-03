@@ -3,7 +3,6 @@ from datetime import datetime, timedelta, timezone
 from typing import BinaryIO
 
 import pytest
-
 from dissect.disc.base import DiscFormat
 from dissect.disc.disc import DISC, log
 from dissect.disc.exceptions import FileNotFoundError
@@ -23,7 +22,9 @@ def genisoimage_joliet_filename(original: str, limit: int = 128) -> str:
 
 
 @pytest.mark.parametrize("use_path_table", [False, True])
-def test_rockridge_joliet(rockridge_joliet_iso: BinaryIO, use_path_table: bool, caplog) -> None:
+def test_rockridge_joliet(
+    rockridge_joliet_iso: BinaryIO, use_path_table: bool, caplog: pytest.LogCaptureFixture
+) -> None:
     rockridge_disc = DISC(rockridge_joliet_iso)
     rockridge_fs = rockridge_disc.fs
     # Assert defaulting to rockridge
@@ -83,7 +84,7 @@ def test_rockridge_joliet(rockridge_joliet_iso: BinaryIO, use_path_table: bool, 
 
 
 @pytest.mark.parametrize("fs_format", [DiscFormat.JOLIET, DiscFormat.ROCKRIDGE, DiscFormat.ISO9660])
-def test_primary_volume_descriptor(hybrid_iso: BinaryIO, fs_format: DiscFormat):
+def test_primary_volume_descriptor(hybrid_iso: BinaryIO, fs_format: DiscFormat) -> None:
     disc = DISC(hybrid_iso, preference=fs_format)
 
     fs_name = "DISSECTGREATESTHITS"
@@ -96,14 +97,14 @@ def test_primary_volume_descriptor(hybrid_iso: BinaryIO, fs_format: DiscFormat):
 
 @pytest.mark.parametrize("fs_format", [DiscFormat.JOLIET, DiscFormat.ROCKRIDGE, DiscFormat.ISO9660])
 @pytest.mark.parametrize("use_path_table", [False, True])
-def test_notfound_iso(hybrid_iso: BinaryIO, fs_format: DiscFormat, use_path_table: bool):
+def test_notfound_iso(hybrid_iso: BinaryIO, fs_format: DiscFormat, use_path_table: bool) -> None:
     disc = DISC(hybrid_iso, preference=fs_format)
     with pytest.raises(FileNotFoundError):
         disc.fs.get("1/does_not_exists.txt", use_path_table)
 
 
 @pytest.mark.parametrize(
-    "fs_format,filename",
+    ("fs_format", "filename"),
     [
         (DiscFormat.JOLIET, genisoimage_joliet_filename(LONG_FILENAME)),
         (DiscFormat.ROCKRIDGE, LONG_FILENAME),
@@ -111,7 +112,7 @@ def test_notfound_iso(hybrid_iso: BinaryIO, fs_format: DiscFormat, use_path_tabl
     ],
 )
 @pytest.mark.parametrize("use_path_table", [False, True])
-def test_entry_attributes(hybrid_iso: BinaryIO, fs_format: DiscFormat, filename: str, use_path_table: bool):
+def test_entry_attributes(hybrid_iso: BinaryIO, fs_format: DiscFormat, filename: str, use_path_table: bool) -> None:
     disc = DISC(hybrid_iso, preference=fs_format)
 
     assert disc.selected_format == fs_format
@@ -169,7 +170,7 @@ def test_rockridge_specific_features(rockridge_joliet_iso: BinaryIO) -> None:
     assert symlink_upwards.parent.get(symlink_upwards.readlink()).open().read() == b"My filename is really long!"
 
 
-def test_fallback_to_rockridge(rockridge_joliet_iso: BinaryIO, caplog):
+def test_fallback_to_rockridge(rockridge_joliet_iso: BinaryIO, caplog: pytest.LogCaptureFixture) -> None:
     disc = DISC(rockridge_joliet_iso, preference=DiscFormat.UDF)
 
     assert "udf format is not available for this disc. Falling back to rockridge" in caplog.text

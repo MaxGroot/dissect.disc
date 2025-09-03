@@ -38,7 +38,7 @@ class DISC:
                 treated as the best available format. Defaults to None.
         """
         self.fh = fh
-        self.available_formats: dict[DiscFormat, DiscBase] = dict()
+        self.available_formats: dict[DiscFormat, DiscBase] = {}
         self.selected_format: DiscFormat = None
 
         for disc_format, disc in load_iso9660_discs(self.fh):
